@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lista Serata</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0a0a0f; --surface:#13131a; --surface2:#1c1c27; --border:#2a2a3d;
+    --accent:#e8ff47; --accent2:#ff4778; --text:#f0f0f5; --muted:#6b6b8a; --green:#47ffb2;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:0;opacity:0.5;}
+  .container{position:relative;z-index:1;max-width:700px;margin:0 auto;padding:24px 16px 110px;}
+
+  header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:24px;padding-bottom:18px;border-bottom:1px solid var(--border);}
+  .brand h1{font-family:'Bebas Neue',sans-serif;font-size:40px;letter-spacing:2px;line-height:1;color:var(--accent);}
+  .brand p{font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-top:2px;}
+  #live-clock{font-size:20px;font-weight:300;color:var(--accent);font-variant-numeric:tabular-nums;}
+
+  /* TABS */
+  .tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:4px;margin-bottom:20px;}
+  .tab{flex:1;padding:9px 6px;border:none;background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;border-radius:10px;transition:all 0.2s;text-align:center;letter-spacing:0.3px;}
+  .tab.active{background:var(--accent);color:#0a0a0f;}
+  .tab-pane{display:none;} .tab-pane.active{display:block;}
+
+  /* PANELS */
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px;margin-bottom:14px;}
+  .panel h2{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:12px;}
+  .row{display:flex;gap:8px;margin-bottom:8px;align-items:center;}
+  .row:last-child{margin-bottom:0;}
+
+  input[type="text"],input[type="number"]{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color 0.2s;}
+  input[type="number"]{flex:0;width:80px;text-align:center;}
+  input:focus{border-color:var(--accent);}
+  input::placeholder{color:var(--muted);}
+  label.lbl{font-size:11px;color:var(--muted);white-space:nowrap;}
+
+  .btn{padding:10px 16px;border-radius:10px;border:none;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;white-space:nowrap;}
+  .btn-accent{background:var(--accent);color:#0a0a0f;} .btn-accent:hover{background:#d4eb30;}
+  .btn-ghost{background:var(--surface2);color:var(--muted);border:1px solid var(--border);} .btn-ghost:hover{color:var(--text);}
+  .btn-danger{background:transparent;color:var(--accent2);border:1px solid transparent;padding:6px 10px;font-size:15px;} .btn-danger:hover{border-color:var(--accent2);}
+  .btn-green{background:var(--green);color:#0a0a0f;} .btn-wa{background:#25D366;color:#fff;}
+  .btn-full{width:100%;padding:13px;font-size:14px;text-align:center;}
+
+  /* PR ROSTER CARDS (tab PR) */
+  .roster-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:13px 15px;margin-bottom:8px;animation:slideIn 0.2s ease both;}
+  .roster-top{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .roster-name{font-size:14px;font-weight:600;}
+  .roster-bonus{font-size:12px;color:var(--accent);margin-top:2px;}
+  .roster-edit{display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap;}
+
+  /* EVENTI LIST */
+  .event-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:13px 16px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;transition:border-color 0.2s;}
+  .event-card:hover{border-color:#3a3a55;}
+  .event-card.active-ev{border-color:var(--accent);}
+  .event-name-txt{font-size:14px;font-weight:600;}
+  .event-date-txt{font-size:11px;color:var(--muted);margin-top:2px;}
+  .event-actions{display:flex;gap:6px;flex-shrink:0;}
+
+  /* TOTAL BAR */
+  .total-bar{background:linear-gradient(135deg,var(--surface),var(--surface2));border:1px solid var(--border);border-radius:16px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;}
+  .total-bar .lbl2{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);}
+  .total-bar .count{font-family:'Bebas Neue',sans-serif;font-size:48px;color:var(--accent);line-height:1;}
+  .total-bar .sub{font-size:11px;color:var(--muted);margin-top:2px;}
+
+  /* PR SERATA CARDS */
+  .pr-list{display:flex;flex-direction:column;gap:10px;}
+  .pr-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:13px 15px;display:flex;align-items:center;gap:12px;transition:border-color 0.2s;animation:slideIn 0.25s ease both;}
+  .pr-card.flash{animation:flash 0.3s ease;}
+  @keyframes flash{0%{border-color:var(--border)}50%{border-color:var(--accent);background:rgba(232,255,71,0.06)}100%{border-color:var(--border);background:var(--surface)}}
+  @keyframes slideIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+  .pr-avatar{width:40px;height:40px;border-radius:12px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:17px;color:var(--accent);flex-shrink:0;border:1px solid var(--border);}
+  .pr-info{flex:1;min-width:0;}
+  .pr-name{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .pr-meta{display:flex;gap:5px;margin-top:3px;flex-wrap:wrap;}
+  .badge{font-size:10px;padding:2px 7px;border-radius:20px;font-weight:500;}
+  .badge-green{background:rgba(71,255,178,0.1);color:var(--green);}
+  .badge-red{background:rgba(255,71,120,0.1);color:var(--accent2);}
+  .badge-muted{background:rgba(107,107,138,0.15);color:var(--muted);}
+  .badge-yellow{background:rgba(232,255,71,0.1);color:var(--accent);}
+  .pr-counter{display:flex;align-items:center;gap:7px;flex-shrink:0;}
+  .counter-num{font-family:'Bebas Neue',sans-serif;font-size:36px;color:var(--text);line-height:1;min-width:38px;text-align:center;font-variant-numeric:tabular-nums;}
+  .btn-tap{width:46px;height:46px;border-radius:13px;border:none;background:var(--accent);color:#0a0a0f;font-size:22px;font-weight:700;cursor:pointer;transition:all 0.1s;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .btn-tap:active{transform:scale(0.91);background:#d4eb30;}
+  .btn-minus{width:30px;height:30px;border-radius:9px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:17px;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;}
+  .btn-minus:hover{border-color:var(--accent2);color:var(--accent2);}
+
+  /* CONFIRM */
+  .confirm-banner{display:none;background:rgba(255,71,120,0.12);border:1px solid var(--accent2);border-radius:12px;padding:11px 14px;margin-bottom:14px;font-size:13px;color:var(--accent2);align-items:center;gap:10px;}
+  .confirm-banner.show{display:flex;}
+  .confirm-banner .cactions{display:flex;gap:6px;margin-left:auto;}
+
+  /* REPORT OVERLAY */
+  .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:100;backdrop-filter:blur(8px);padding:16px;overflow-y:auto;}
+  .overlay.open{display:flex;align-items:flex-start;justify-content:center;}
+  .overlay-box{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:24px;width:100%;max-width:540px;margin:auto;animation:slideIn 0.25s ease;}
+  .overlay-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+  .overlay-header h2{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:1px;color:var(--accent);}
+  .rep-sub{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;}
+  .rep-pr{background:var(--surface2);border-radius:12px;padding:12px 14px;margin-bottom:7px;}
+  .rep-pr-top{display:flex;justify-content:space-between;align-items:center;}
+  .rep-pr-name{font-size:14px;font-weight:600;}
+  .rep-pr-amt{font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--accent);}
+  .rep-pr-detail{display:flex;gap:6px;margin-top:5px;flex-wrap:wrap;}
+  .rep-divider{border:none;border-top:1px solid var(--border);margin:14px 0;}
+  .rep-grand{display:flex;justify-content:space-between;align-items:center;}
+  .rep-grand .lbl{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);}
+  .rep-grand .big{font-family:'Bebas Neue',sans-serif;font-size:42px;color:var(--accent);}
+  .rep-actions{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+  .rep-actions .btn{flex:1;min-width:110px;padding:11px;font-size:13px;text-align:center;display:flex;align-items:center;justify-content:center;gap:5px;}
+
+  /* NEW EVENT OVERLAY */
+  .new-ev-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:100;backdrop-filter:blur(8px);padding:16px;align-items:center;justify-content:center;}
+  .new-ev-overlay.open{display:flex;}
+  .new-ev-box{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:24px;width:100%;max-width:440px;animation:slideIn 0.25s ease;}
+  .new-ev-box h2{font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--accent);margin-bottom:4px;letter-spacing:1px;}
+  .new-ev-box p{font-size:12px;color:var(--muted);margin-bottom:18px;}
+  .new-ev-box .row{margin-bottom:10px;}
+  .pr-toggle{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;cursor:pointer;}
+  .pr-toggle.selected{border-color:var(--accent);background:rgba(232,255,71,0.06);}
+  .pr-toggle-name{font-size:13px;font-weight:600;}
+  .pr-toggle-bonus{font-size:11px;color:var(--muted);}
+  .pr-toggle-check{font-size:18px;color:var(--accent);}
+  .free-row{display:flex;align-items:center;gap:8px;margin-top:4px;margin-bottom:6px;padding-left:4px;}
+  .free-row label{font-size:11px;color:var(--muted);}
+  .free-row input{width:60px;flex:0;}
+
+  /* BOTTOM BAR */
+  .bottom-bar{position:fixed;bottom:0;left:0;right:0;background:rgba(10,10,15,0.93);backdrop-filter:blur(12px);border-top:1px solid var(--border);padding:10px 14px;display:flex;gap:8px;justify-content:center;z-index:10;}
+  .bottom-bar .btn{flex:1;max-width:200px;padding:12px;font-size:13px;}
+
+  .empty-state{text-align:center;padding:40px 20px;color:var(--muted);}
+  .empty-state .icon{font-size:36px;margin-bottom:10px;opacity:0.4;}
+
+  @media(max-width:380px){.btn-tap{width:40px;height:40px;font-size:19px}.counter-num{font-size:30px}}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="brand">
+      <h1>Lista Serata</h1>
+      <p id="ev-label">Nessun evento attivo</p>
+    </div>
+    <div id="live-clock">--:--</div>
+  </header>
+
+  <div class="tabs">
+    <button id="tab-btn-eventi" class="tab active" onclick="switchTab('eventi')">📅 Eventi</button>
+    <button id="tab-btn-pr" class="tab" onclick="switchTab('pr')">👥 PR</button>
+    <button id="tab-btn-serata" class="tab" onclick="switchTab('serata')">🎶 Serata</button>
+  </div>
+
+  <!-- ===== TAB EVENTI ===== -->
+  <div class="tab-pane active" id="tab-eventi">
+    <div class="panel">
+      <h2>➕ Nuova serata</h2>
+      <div class="row">
+        <input type="text" id="ev-name-input" placeholder="Nome evento (es. Sabato 7 giugno)" />
+        <button class="btn btn-accent" onclick="openNewEvent()">Crea</button>
+      </div>
+    </div>
+    <div id="events-list"></div>
+  </div>
+
+  <!-- ===== TAB PR ===== -->
+  <div class="tab-pane" id="tab-pr">
+    <div class="panel">
+      <h2>➕ Aggiungi PR</h2>
+      <div class="row">
+        <input type="text" id="pr-name-input" placeholder="Nome PR..." onkeydown="if(event.key==='Enter') addPR()" />
+        <label class="lbl">€/pers.</label>
+        <input type="number" id="pr-bonus-input" value="5" min="0" step="0.5" />
+        <button class="btn btn-accent" onclick="addPR()">+ PR</button>
+      </div>
+    </div>
+    <div id="roster-list"></div>
+  </div>
+
+  <!-- ===== TAB SERATA ===== -->
+  <div class="tab-pane" id="tab-serata">
+    <div class="total-bar">
+      <div>
+        <div class="lbl2">Ingressi totali</div>
+        <div class="sub" id="pr-count-label">—</div>
+      </div>
+      <div class="count" id="total-count">0</div>
+    </div>
+    <div class="confirm-banner" id="confirm-banner">
+      ⚠ Azzerare i contatori di questa serata?
+      <div class="cactions">
+        <button class="btn btn-ghost" style="padding:5px 10px;font-size:11px" onclick="hideConfirm()">No</button>
+        <button class="btn btn-danger" style="padding:5px 10px;font-size:11px" onclick="confirmReset()">Azzera</button>
+      </div>
+    </div>
+    <div class="pr-list" id="pr-list"></div>
+    <!-- aggiungi PR durante serata -->
+    <div style="margin-top:14px">
+      <button class="btn btn-ghost" style="width:100%;padding:11px;font-size:13px" onclick="toggleAddPrInSerata()">➕ Aggiungi PR durante la serata</button>
+      <div id="add-pr-serata-panel" style="display:none;margin-top:10px">
+        <div class="panel">
+          <h2>Nuovo PR — aggiunto in corsa</h2>
+          <div class="row">
+            <input type="text" id="serata-pr-name" placeholder="Nome PR..." />
+            <label class="lbl">€/pers.</label>
+            <input type="number" id="serata-pr-bonus" value="5" min="0" step="0.5" />
+          </div>
+          <div class="row">
+            <label class="lbl">Ingressi gratuiti:</label>
+            <input type="number" id="serata-pr-free" value="0" min="0" step="1" />
+            <button class="btn btn-accent" style="flex:1" onclick="addPrDuringSerata()">Aggiungi →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM BAR -->
+<div class="bottom-bar">
+  <button class="btn btn-ghost" onclick="showConfirm()">🔄 Azzera</button>
+  <button class="btn btn-accent" onclick="openReport()">📊 Resoconto</button>
+</div>
+
+<!-- NEW EVENT OVERLAY -->
+<div class="new-ev-overlay" id="new-ev-overlay">
+  <div class="new-ev-box">
+    <h2>Nuova Serata</h2>
+    <p id="new-ev-title-label">Seleziona i PR e imposta i gratuiti</p>
+    <div id="pr-toggles"></div>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="btn btn-ghost btn-full" onclick="closeNewEvent()">Annulla</button>
+      <button class="btn btn-accent btn-full" onclick="confirmNewEvent()">Crea Serata →</button>
+    </div>
+  </div>
+</div>
+
+<!-- REPORT OVERLAY -->
+<div class="overlay" id="report-overlay">
+  <div class="overlay-box">
+    <div class="overlay-header">
+      <h2>📊 Resoconto</h2>
+      <button class="btn btn-ghost" onclick="closeReport()" style="padding:7px 12px">✕</button>
+    </div>
+    <div id="report-content"></div>
+    <div class="rep-actions">
+      <button class="btn btn-green" onclick="downloadPDF()">⬇ PDF</button>
+      <a id="wa-link" class="btn btn-wa" href="#" target="_blank" rel="noopener" style="text-decoration:none">💬 WhatsApp</a>
+      <button class="btn btn-ghost" onclick="closeReport()">Chiudi</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── STATE ─────────────────────────────────────────────────────────────────
+let roster  = JSON.parse(localStorage.getItem('roster_v3')  || '[]'); // PR fissi
+let events  = JSON.parse(localStorage.getItem('events_v3')  || '[]'); // storico eventi
+let activeId = localStorage.getItem('activeId_v3') || null;
+let pendingEventName = '';
+
+function save() {
+  localStorage.setItem('roster_v3',  JSON.stringify(roster));
+  localStorage.setItem('events_v3',  JSON.stringify(events));
+  localStorage.setItem('activeId_v3', activeId || '');
+}
+
+function activeEvent() { return events.find(e => String(e.id) === String(activeId)) || null; }
+
+// ─── ROSTER (PR fissi) ─────────────────────────────────────────────────────
+function addPR() {
+  const name  = document.getElementById('pr-name-input').value.trim();
+  const bonus = parseFloat(document.getElementById('pr-bonus-input').value) || 0;
+  if (!name) return;
+  roster.push({ id: Date.now(), name, bonus });
+  document.getElementById('pr-name-input').value = '';
+  save(); renderRoster();
+  document.getElementById('pr-name-input').focus();
+}
+
+function removeFromRoster(id) {
+  if (!confirm('Rimuovere questo PR dal roster?')) return;
+  roster = roster.filter(r => r.id !== id);
+  save(); renderRoster();
+}
+
+function updateRosterBonus(id, val) {
+  const r = roster.find(r => r.id === id);
+  if (r) { r.bonus = parseFloat(val) || 0; save(); renderRoster(); }
+}
+
+function renderRoster() {
+  const el = document.getElementById('roster-list');
+  if (!roster.length) {
+    el.innerHTML = '<div class="empty-state"><div class="icon">👥</div><p>Nessun PR ancora. Aggiungili qui e saranno disponibili per tutte le serate.</p></div>';
+    return;
+  }
+  el.innerHTML = roster.map(r => `
+    <div class="roster-card">
+      <div class="roster-top">
+        <div>
+          <div class="roster-name">${r.name}</div>
+          <div class="roster-bonus">€${r.bonus} per ingresso</div>
+        </div>
+        <button class="btn btn-danger" onclick="removeFromRoster(${r.id})">✕</button>
+      </div>
+      <div class="roster-edit">
+        <label class="lbl">€/pers.:</label>
+        <input type="number" value="${r.bonus}" min="0" step="0.5" style="width:75px" oninput="updateRosterBonus(${r.id},this.value)" />
+      </div>
+    </div>
+  `).join('');
+}
+
+// ─── EVENTI ────────────────────────────────────────────────────────────────
+function openNewEvent() {
+  const name = document.getElementById('ev-name-input').value.trim();
+  if (!name) { document.getElementById('ev-name-input').focus(); return; }
+  if (!roster.length) { alert('Aggiungi prima almeno un PR nel tab PR'); switchTab('pr'); return; }
+  pendingEventName = name;
+  document.getElementById('new-ev-title-label').textContent = `"${name}" — seleziona PR e gratuiti`;
+  renderToggles();
+  document.getElementById('new-ev-overlay').classList.add('open');
+}
+
+function closeNewEvent() { document.getElementById('new-ev-overlay').classList.remove('open'); }
+
+function renderToggles() {
+  const el = document.getElementById('pr-toggles');
+  el.innerHTML = roster.map(r => `
+    <div class="pr-toggle selected" id="toggle-${r.id}" onclick="togglePR(${r.id})">
+      <div>
+        <div class="pr-toggle-name">${r.name}</div>
+        <div class="pr-toggle-bonus">€${r.bonus}/ingresso</div>
+      </div>
+      <span class="pr-toggle-check">✓</span>
+    </div>
+    <div class="free-row" id="free-row-${r.id}">
+      <label>Ingressi gratuiti:</label>
+      <input type="number" id="free-${r.id}" value="0" min="0" step="1" onclick="event.stopPropagation()" />
+    </div>
+  `).join('');
+}
+
+function togglePR(id) {
+  const tog = document.getElementById('toggle-' + id);
+  const frow = document.getElementById('free-row-' + id);
+  const selected = tog.classList.toggle('selected');
+  frow.style.display = selected ? 'flex' : 'none';
+  tog.querySelector('.pr-toggle-check').style.opacity = selected ? '1' : '0';
+}
+
+function confirmNewEvent() {
+  const selected = roster.filter(r => document.getElementById('toggle-' + r.id)?.classList.contains('selected'));
+  if (!selected.length) { alert('Seleziona almeno un PR'); return; }
+  const ev = {
+    id: Date.now(),
+    name: pendingEventName,
+    date: new Date().toLocaleDateString('it-IT'),
+    prs: selected.map(r => ({
+      id: r.id,
+      name: r.name,
+      bonus: r.bonus,
+      freeEntries: parseInt(document.getElementById('free-' + r.id)?.value || 0) || 0,
+      count: 0,
+      lastEntry: null
+    }))
+  };
+  events.unshift(ev);
+  activeId = String(ev.id);
+  document.getElementById('ev-name-input').value = '';
+  save();
+  closeNewEvent();
+  renderAll();
+  setTimeout(() => switchTab('serata'), 50);
+}
+
+function setActive(id) {
+  activeId = String(id);
+  save();
+  renderAll();
+  switchTab('serata');
+}
+
+function deleteEvent(id) {
+  if (!confirm('Eliminare questa serata e tutti i dati?')) return;
+  events = events.filter(e => String(e.id) !== String(id));
+  if (String(activeId) === String(id)) activeId = events[0] ? String(events[0].id) : null;
+  save(); renderAll();
+}
+
+function renderEvents() {
+  const el = document.getElementById('events-list');
+  if (!events.length) {
+    el.innerHTML = '<div class="empty-state"><div class="icon">📅</div><p>Crea la prima serata qui sopra</p></div>';
+    return;
+  }
+  el.innerHTML = events.map(ev => {
+    const totIngressi = ev.prs.reduce((s,p)=>s+p.count,0);
+    const isActive = String(ev.id) === String(activeId);
+    return `
+    <div class="event-card ${isActive ? 'active-ev' : ''}">
+      <div style="flex:1;min-width:0" onclick="setActive(${ev.id})" style="cursor:pointer">
+        <div class="event-name-txt">${ev.name}</div>
+        <div class="event-date-txt">${ev.date} · ${ev.prs.length} PR · ${totIngressi} ingressi</div>
+      </div>
+      <div class="event-actions" onclick="event.stopPropagation()">
+        ${!isActive ? `<button class="btn btn-ghost" style="padding:5px 9px;font-size:11px" onclick="setActive(${ev.id})">Attiva</button>` : `<span class="badge badge-yellow" style="align-self:center">● Attiva</span>`}
+        <button class="btn btn-ghost" style="padding:5px 9px;font-size:11px" onclick="printEvent('${ev.id}')">🖨</button>
+        <button class="btn btn-danger" style="padding:5px 9px;font-size:14px" onclick="deleteEvent('${ev.id}')">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function printEvent(evId) {
+  const ev = events.find(e => String(e.id) === String(evId));
+  if (!ev) return;
+  const sorted = [...ev.prs].sort((a,b) => b.count - a.count);
+  const totalIngressi = ev.prs.reduce((s,p)=>s+p.count,0);
+  const totalPagamento = ev.prs.reduce((s,p)=>s+Math.max(0,p.count-p.freeEntries)*p.bonus,0);
+  const now = new Date().toLocaleString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Resoconto ${ev.name}</title>
+  <style>
+    body{font-family:Arial,sans-serif;max-width:620px;margin:40px auto;color:#111;font-size:14px}
+    h1{font-size:22px;margin-bottom:4px}
+    .sub{color:#888;font-size:12px;margin-bottom:22px}
+    table{width:100%;border-collapse:collapse;margin-bottom:18px}
+    th{background:#111;color:#fff;padding:9px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:1px}
+    td{padding:10px 12px;border-bottom:1px solid #eee}
+    .tot td{background:#f0f0f0;font-weight:700;font-size:15px}
+    .grand{background:#111;color:#fff;padding:16px 20px;border-radius:8px;display:flex;justify-content:space-between;align-items:center}
+    .grand .num{font-size:30px;font-weight:700}
+    .rank{color:#888;font-size:12px}
+  </style></head><body>
+  <h1>📊 ${ev.name}</h1>
+  <div class="sub">Generato il ${now} · Data evento: ${ev.date}</div>
+  <table>
+    <tr><th>#</th><th>PR</th><th>Ingressi</th><th>Gratuiti</th><th>Paganti</th><th>€/pers.</th><th>Totale</th></tr>
+    ${sorted.map((pr,i)=>{
+      const p=Math.max(0,pr.count-pr.freeEntries);
+      return `<tr>
+        <td class="rank">${i+1}</td>
+        <td><b>${pr.name}</b></td>
+        <td><b>${pr.count}</b></td>
+        <td>${pr.freeEntries}</td>
+        <td>${p}</td>
+        <td>€${pr.bonus}</td>
+        <td><b>€${(p*pr.bonus).toFixed(2)}</b></td>
+      </tr>`;
+    }).join('')}
+    <tr class="tot">
+      <td></td><td>TOTALE</td>
+      <td>${totalIngressi}</td>
+      <td>${ev.prs.reduce((s,p)=>s+p.freeEntries,0)}</td>
+      <td>${ev.prs.reduce((s,p)=>s+Math.max(0,p.count-p.freeEntries),0)}</td>
+      <td>—</td>
+      <td>€${totalPagamento.toFixed(2)}</td>
+    </tr>
+  </table>
+  <div class="grand">
+    <div>Totale da pagare<br><small style="opacity:.6">${totalIngressi} ingressi totali</small></div>
+    <div class="num">€ ${totalPagamento.toFixed(2)}</div>
+  </div>
+  <script>window.onload=()=>window.print()<\/script>
+  </body></html>`;
+  const w = window.open(URL.createObjectURL(new Blob([html],{type:'text/html'})), '_blank');
+  if (!w) alert('Abilita i popup per stampare');
+}
+
+// ─── SERATA ────────────────────────────────────────────────────────────────
+function toggleAddPrInSerata() {
+  const p = document.getElementById('add-pr-serata-panel');
+  p.style.display = p.style.display === 'none' ? 'block' : 'none';
+  if (p.style.display === 'block') document.getElementById('serata-pr-name').focus();
+}
+
+function addPrDuringSerata() {
+  const ev = activeEvent(); if (!ev) return;
+  const name = document.getElementById('serata-pr-name').value.trim();
+  const bonus = parseFloat(document.getElementById('serata-pr-bonus').value) || 0;
+  const freeEntries = parseInt(document.getElementById('serata-pr-free').value) || 0;
+  if (!name) { document.getElementById('serata-pr-name').focus(); return; }
+  // Add to roster too if not present
+  const existing = roster.find(r => r.name.toLowerCase() === name.toLowerCase());
+  const rosterId = existing ? existing.id : Date.now();
+  if (!existing) roster.push({ id: rosterId, name, bonus });
+  // Add to current event
+  ev.prs.push({ id: rosterId, name, bonus, freeEntries, count: 0, lastEntry: null });
+  document.getElementById('serata-pr-name').value = '';
+  document.getElementById('serata-pr-free').value = '0';
+  document.getElementById('add-pr-serata-panel').style.display = 'none';
+  save(); renderAll();
+}
+
+function tap(prId) {
+  const ev = activeEvent(); if (!ev) return;
+  const pr = ev.prs.find(p => p.id === prId); if (!pr) return;
+  pr.count++;
+  pr.lastEntry = new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+  save(); renderSerata();
+  const card = document.getElementById('card-' + prId);
+  if (card) { card.classList.remove('flash'); void card.offsetWidth; card.classList.add('flash'); }
+}
+
+function minus(prId) {
+  const ev = activeEvent(); if (!ev) return;
+  const pr = ev.prs.find(p => p.id === prId); if (!pr || pr.count === 0) return;
+  pr.count--; save(); renderSerata();
+}
+
+function updateFreeInSerata(prId, val) {
+  const ev = activeEvent(); if (!ev) return;
+  const pr = ev.prs.find(p => p.id === prId); if (!pr) return;
+  pr.freeEntries = parseInt(val) || 0;
+  save();
+  // update badges without full re-render to avoid losing input focus
+}
+
+function renderSerata() {
+  const ev = activeEvent();
+  document.getElementById('ev-label').textContent = ev ? ev.name : 'Nessun evento attivo';
+  const list = document.getElementById('pr-list');
+  if (!ev) {
+    document.getElementById('total-count').textContent = '0';
+    document.getElementById('pr-count-label').textContent = '—';
+    list.innerHTML = '<div class="empty-state"><div class="icon">📅</div><p>Nessun evento attivo. Crea o attiva una serata nel tab Eventi.</p></div>';
+    return;
+  }
+  const total = ev.prs.reduce((s,p) => s + p.count, 0);
+  document.getElementById('total-count').textContent = total;
+  document.getElementById('pr-count-label').textContent = `${ev.prs.length} PR · ${ev.name}`;
+  list.innerHTML = ev.prs.map(pr => `
+    <div class="pr-card" id="card-${pr.id}">
+      <div class="pr-avatar">${pr.name.charAt(0).toUpperCase()}</div>
+      <div class="pr-info">
+        <div class="pr-name">${pr.name}</div>
+        <div class="pr-meta">
+          <span class="badge badge-green">${pr.count} ingressi</span>
+          ${pr.lastEntry ? `<span class="badge badge-muted">↑ ${pr.lastEntry}</span>` : ''}
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:5px">
+          <span style="font-size:10px;color:var(--muted)">Gratuiti:</span>
+          <input type="number" value="${pr.freeEntries}" min="0" step="1"
+            style="width:52px;padding:3px 6px;font-size:12px;border-radius:7px;background:var(--surface2);border:1px solid var(--border);color:var(--text);text-align:center"
+            oninput="updateFreeInSerata(${pr.id}, this.value)" onclick="event.stopPropagation()" />
+        </div>
+      </div>
+      <div class="pr-counter">
+        <button class="btn-minus" onclick="minus(${pr.id})">−</button>
+        <div class="counter-num">${pr.count}</div>
+        <button class="btn-tap" onclick="tap(${pr.id})">+</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ─── RESET ─────────────────────────────────────────────────────────────────
+function showConfirm() { document.getElementById('confirm-banner').classList.add('show'); }
+function hideConfirm() { document.getElementById('confirm-banner').classList.remove('show'); }
+function confirmReset() {
+  const ev = activeEvent(); if (!ev) return;
+  ev.prs.forEach(p => { p.count = 0; p.lastEntry = null; });
+  save(); renderSerata(); hideConfirm();
+}
+
+// ─── REPORT ────────────────────────────────────────────────────────────────
+function buildReportData() {
+  const ev = activeEvent();
+  if (!ev) return null;
+  const now = new Date().toLocaleString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  const sorted = [...ev.prs].sort((a,b) => b.count - a.count);
+  const totalIngressi = ev.prs.reduce((s,p) => s + p.count, 0);
+  const totalPagamento = ev.prs.reduce((s,p) => s + Math.max(0, p.count - p.freeEntries) * p.bonus, 0);
+  return { ev, now, sorted, totalIngressi, totalPagamento };
+}
+
+function openReport() {
+  const d = buildReportData();
+  if (!d) { alert('Nessun evento attivo'); return; }
+  document.getElementById('report-content').innerHTML = `
+    <div class="rep-sub">${d.ev.name} — ${d.now}</div>
+    ${d.sorted.map(pr => {
+      const payable = Math.max(0, pr.count - pr.freeEntries);
+      const earn = (payable * pr.bonus).toFixed(2).replace('.',',');
+      return `<div class="rep-pr">
+        <div class="rep-pr-top">
+          <div class="rep-pr-name">${pr.name}</div>
+          <div class="rep-pr-amt">€ ${earn}</div>
+        </div>
+        <div class="rep-pr-detail">
+          <span class="badge badge-green">${pr.count} ingressi</span>
+          ${pr.freeEntries>0?`<span class="badge badge-red">-${pr.freeEntries} gratis</span>`:''}
+          <span class="badge badge-yellow">${payable} paganti × €${pr.bonus}</span>
+        </div>
+      </div>`;
+    }).join('')}
+    <hr class="rep-divider"/>
+    <div class="rep-grand">
+      <div>
+        <div class="lbl">Totale da pagare</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${d.totalIngressi} ingressi totali</div>
+      </div>
+      <div class="big">€ ${d.totalPagamento.toFixed(2).replace('.',',')}</div>
+    </div>
+  `;
+  // build WhatsApp link directly on the anchor
+  const d2 = buildReportData();
+  if (d2) {
+    let msg2 = '📊 *Resoconto ' + d2.ev.name + '*\n_' + d2.now + '_\n\n';
+    d2.sorted.forEach(function(pr) {
+      const payable = Math.max(0, pr.count - pr.freeEntries);
+      const earn = (payable * pr.bonus).toFixed(2);
+      msg2 += '👤 *' + pr.name + '*\n   ' + pr.count + ' ingressi';
+      if (pr.freeEntries > 0) msg2 += ' (- ' + pr.freeEntries + ' gratis = ' + payable + ' paganti)';
+      msg2 += '\n   💶 €' + earn + '\n\n';
+    });
+    msg2 += '━━━━━━━━━━\n💰 *Totale: €' + d2.totalPagamento.toFixed(2) + '*\n(' + d2.totalIngressi + ' ingressi totali)';
+    document.getElementById('wa-link').href = 'https://wa.me/?text=' + encodeURIComponent(msg2);
+  }
+  document.getElementById('report-overlay').classList.add('open');
+}
+function closeReport() { document.getElementById('report-overlay').classList.remove('open'); }
+
+function sendWhatsApp() {
+  const d = buildReportData(); if (!d) return;
+  let msg = `📊 *Resoconto ${d.ev.name}*\n_${d.now}_\n\n`;
+  d.sorted.forEach(pr => {
+    const payable = Math.max(0, pr.count - pr.freeEntries);
+    const earn = (payable * pr.bonus).toFixed(2);
+    msg += `👤 *${pr.name}*\n   ${pr.count} ingressi`;
+    if (pr.freeEntries > 0) msg += ` (- ${pr.freeEntries} gratis = ${payable} paganti)`;
+    msg += `\n   💶 €${earn}\n\n`;
+  });
+  msg += `━━━━━━━━━━━━\n💰 *Totale: €${d.totalPagamento.toFixed(2)}*\n(${d.totalIngressi} ingressi totali)`;
+  const encoded = encodeURIComponent(msg);
+  if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+    window.location.href = 'whatsapp://send?text=' + encoded;
+  } else {
+    window.open('https://web.whatsapp.com/send?text=' + encoded, '_blank');
+  }
+}
+
+function downloadPDF() {
+  const d = buildReportData(); if (!d) return;
+  const rows = d.sorted.map(function(pr) {
+    const p = Math.max(0, pr.count - pr.freeEntries);
+    return '<tr><td><b>' + pr.name + '</b></td><td>' + pr.count + '</td><td>' + pr.freeEntries + '</td><td>' + p + '</td><td>&#8364;' + pr.bonus + '</td><td><b>&#8364;' + (p * pr.bonus).toFixed(2) + '</b></td></tr>';
+  }).join('');
+  const totFree = d.ev.prs.reduce(function(s,p){return s+p.freeEntries;},0);
+  const totPay  = d.ev.prs.reduce(function(s,p){return s+Math.max(0,p.count-p.freeEntries);},0);
+  const html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Resoconto ' + d.ev.name + '</title>'
+    + '<style>'
+    + 'body{font-family:Arial,sans-serif;max-width:650px;margin:40px auto;color:#111;font-size:14px}'
+    + 'h1{font-size:22px;margin-bottom:4px}.sub{color:#888;font-size:12px;margin-bottom:22px}'
+    + 'table{width:100%;border-collapse:collapse;margin-bottom:18px}'
+    + 'th{background:#111;color:#fff;padding:9px 11px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:1px}'
+    + 'td{padding:9px 11px;border-bottom:1px solid #eee}'
+    + '.tot td{background:#f5f5f5;font-weight:700;font-size:15px}'
+    + '.grand{background:#111;color:#fff;padding:16px 20px;border-radius:8px;display:flex;justify-content:space-between;align-items:center}'
+    + '.grand .num{font-size:30px;font-weight:700}'
+    + '@media print{body{margin:20px}}'
+    + '</style></head><body>'
+    + '<h1>&#128202; ' + d.ev.name + '</h1>'
+    + '<div class="sub">Generato il ' + d.now + '</div>'
+    + '<table><tr><th>PR</th><th>Ingressi</th><th>Gratuiti</th><th>Paganti</th><th>&#8364;/pers.</th><th>Totale</th></tr>'
+    + rows
+    + '<tr class="tot"><td colspan="2">TOTALE</td><td>' + totFree + '</td><td>' + totPay + '</td><td>&#8212;</td><td>&#8364;' + d.totalPagamento.toFixed(2) + '</td></tr>'
+    + '</table>'
+    + '<div class="grand"><div>Totale da pagare<br><small style="opacity:.6">' + d.totalIngressi + ' ingressi totali</small></div><div class="num">&#8364; ' + d.totalPagamento.toFixed(2) + '</div></div>'
+    + '</body></html>';
+  // Download as .html file — user opens and prints to PDF
+  const blob = new Blob([html], {type: 'text/html;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'resoconto-' + d.ev.name.replace(/[^a-z0-9]/gi,'_') + '.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+}
+
+// ─── TABS & CLOCK ──────────────────────────────────────────────────────────
+function switchTab(tab) {
+  ['eventi','pr','serata'].forEach(t => {
+    document.getElementById('tab-btn-' + t).classList.toggle('active', t === tab);
+    document.getElementById('tab-' + t).classList.toggle('active', t === tab);
+  });
+}
+
+function renderAll() { renderRoster(); renderEvents(); renderSerata(); }
+
+setInterval(() => {
+  document.getElementById('live-clock').textContent =
+    new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+}, 1000);
+document.getElementById('live-clock').textContent =
+  new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+
+renderAll();
+</script>
+</body>
+</html>
