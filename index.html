@@ -528,7 +528,8 @@ function showRiepilogo() { try {
 
   closeReport();
   document.getElementById('riepilogo').classList.add('open');
-  document.getElementById('ri-scroll').scrollTop = 0;
+  var riScroll = document.getElementById('ri-scroll');
+  if (riScroll) riScroll.scrollTop = 0;
   } catch(err) { alert('Errore: ' + err.message + '\n' + err.stack); }
 }
 
